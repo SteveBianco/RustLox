@@ -7,12 +7,25 @@ use std::str::Chars;
 
 struct Scanner<'a> {
     iter: Peekable<Chars<'a>>,
+    hasError: bool,
 }
 
 impl<'a> Scanner<'a> {
     fn new(input: &'a String) -> Self {
         let iter = input.chars().peekable();
-        Scanner { iter }
+        Scanner {
+            iter,
+            hasError: false,
+        }
+    }
+
+    fn error(&mut self, line: u32, message: &str) {
+        self.report(line, "", message);
+    }
+
+    fn report(&mut self, line: u32, location: &str, message: &str) {
+        println!("[line {line}] Error {location} : {message}");
+        self.hasError = true;
     }
 }
 
