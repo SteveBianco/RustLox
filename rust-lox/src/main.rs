@@ -1,6 +1,7 @@
 use std::env;
 use std::fs;
 use std::io;
+use std::io::Write;
 use std::iter::Peekable;
 use std::str::Chars;
 
@@ -36,6 +37,10 @@ fn run_file(file_path: &str) {
 fn run_prompt() {
     // Continually process input from command line until user terminates witth ctrl-z.
     loop {
+        // Print user prompt
+        print!(">>> ");
+        io::stdout().flush().expect("Expected to flush line.");
+
         let mut input: String = String::new();
 
         let nbytes = io::stdin()
@@ -48,6 +53,9 @@ fn run_prompt() {
 
         run(input);
     }
+
+    // Say good-bye
+    println!("\nSession terminated by user.")
 }
 
 fn run(input: String) {
