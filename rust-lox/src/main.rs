@@ -1,6 +1,19 @@
 use std::env;
 use std::fs;
 use std::io;
+use std::iter::Peekable;
+use std::str::Chars;
+
+struct Scanner<'a> {
+    iter: Peekable<Chars<'a>>,
+}
+
+impl<'a> Scanner<'a> {
+    fn new(input: &'a String) -> Self {
+        let iter = input.chars().peekable();
+        Scanner { iter }
+    }
+}
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -17,7 +30,7 @@ fn main() {
 
 fn run_file(file_path: &str) {
     let input = fs::read_to_string(file_path).expect("File does not exist");
-    run(&input);
+    run(input);
 }
 
 fn run_prompt() {
@@ -33,12 +46,13 @@ fn run_prompt() {
             break;
         }
 
-        run(&input);
+        run(input);
     }
 }
 
-fn run(input: &str) {
-    dbg!(&input);
+fn run(input: String) {
+    let scanner = Scanner::new(&input);
+    dbg!(input);
 }
 
 fn parse_file_path(args: &[String]) -> &str {
