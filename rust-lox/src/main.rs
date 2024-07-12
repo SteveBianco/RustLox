@@ -7,7 +7,7 @@ use std::str::Chars;
 
 struct Scanner<'a> {
     iter: Peekable<Chars<'a>>,
-    hasError: bool,
+    has_error: bool,
 }
 
 impl<'a> Scanner<'a> {
@@ -15,7 +15,7 @@ impl<'a> Scanner<'a> {
         let iter = input.chars().peekable();
         Scanner {
             iter,
-            hasError: false,
+            has_error: false,
         }
     }
 
@@ -25,7 +25,7 @@ impl<'a> Scanner<'a> {
 
     fn report(&mut self, line: u32, location: &str, message: &str) {
         println!("[line {line}] Error {location} : {message}");
-        self.hasError = true;
+        self.has_error = true;
     }
 }
 
@@ -44,17 +44,17 @@ fn main() {
 
 fn run_file(file_path: &str) {
     let input = fs::read_to_string(file_path).expect("File does not exist");
-    run(input);
+    run(&input);
 }
 
 fn run_prompt() {
     // Continually process input from command line until user terminates witth ctrl-z.
+    let mut input: String = String::new();
+
     loop {
         // Print user prompt
         print!(">>> ");
         io::stdout().flush().expect("Expected to flush line.");
-
-        let mut input: String = String::new();
 
         let nbytes = io::stdin()
             .read_line(&mut input)
@@ -64,15 +64,15 @@ fn run_prompt() {
             break;
         }
 
-        run(input);
+        run(&input);
     }
 
     // Say good-bye
     println!("\nSession terminated by user.")
 }
 
-fn run(input: String) {
-    let scanner = Scanner::new(&input);
+fn run(input: &String) {
+    let _scanner = Scanner::new(&input);
     dbg!(input);
 }
 
