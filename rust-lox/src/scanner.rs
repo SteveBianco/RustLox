@@ -8,57 +8,57 @@ pub struct Scanner<'a> {
 
 pub enum Token {
     // Single-character tokens.
-    LEFT_PAREN,
-    RIGHT_PAREN,
-    LEFT_BRACE,
-    RIGHT_BRACE,
-    COMMA,
-    DOT,
-    MINUS,
-    PLUS,
-    SEMICOLON,
-    SLASH,
-    STAR,
+    LeftParen,
+    RightParen,
+    LeftBrace,
+    RightBrace,
+    Comma,
+    Dot,
+    Minus,
+    Plus,
+    Semicolon,
+    Slash,
+    Star,
 
     // One or two character tokens.
-    BANG,
-    BANG_EQUAL,
-    EQUAL,
-    EQUAL_EQUAL,
-    GREATER,
-    GREATER_EQUAL,
-    LESS,
-    LESS_EQUAL,
+    Bang,
+    BangEqual,
+    Equal,
+    EqualEqual,
+    Greater,
+    GreaterEqual,
+    Less,
+    LessEqual,
 
     // Literals.
-    IDENTIFIER(String),
-    STRING(String),
-    NUMBER(f64),
+    Identifier(String),
+    String(String),
+    Number(f64),
 
     // Keywords.
-    AND,
-    CLASS,
-    ELSE,
-    FALSE,
-    FUN,
-    FOR,
-    IF,
-    NIL,
-    OR,
-    PRINT,
-    RETURN,
-    SUPER,
-    THIS,
-    TRUE,
-    VAR,
-    WHILE,
+    And,
+    Class,
+    Else,
+    False,
+    Fun,
+    For,
+    If,
+    Nil,
+    Or,
+    Print,
+    Return,
+    Super,
+    This,
+    True,
+    Var,
+    While,
 
-    EOF,
+    Eof,
 }
 
 impl<'a> Scanner<'a> {
     pub fn scan(input: &'a String) -> Vec<Token> {
-        let _scanner = Scanner::new(&input);
+        let scanner = Scanner::new(&input);
         vec![]
     }
 
@@ -66,16 +66,16 @@ impl<'a> Scanner<'a> {
         let iter = input.chars().peekable();
         Scanner {
             iter,
-            has_error: false,
+            haserror: false,
         }
     }
 
-    fn error(&mut self, line: u32, message: &str) {
-        self.report(line, "", message);
-    }
+    // fn error(&mut self, line: u32, message: &str) {
+    //     self.report(line, "", message);
+    // }
 
-    fn report(&mut self, line: u32, location: &str, message: &str) {
-        println!("[line {line}] Error {location} : {message}");
-        self.has_error = true;
-    }
+    // fn report(&mut self, line: u32, location: &str, message: &str) {
+    //     println!("[line {line}] Error {location} : {message}");
+    //     self.haserror = true;
+    // }
 }
