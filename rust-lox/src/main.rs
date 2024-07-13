@@ -2,32 +2,8 @@ use std::env;
 use std::fs;
 use std::io;
 use std::io::Write;
-use std::iter::Peekable;
-use std::str::Chars;
 
-struct Scanner<'a> {
-    iter: Peekable<Chars<'a>>,
-    has_error: bool,
-}
-
-impl<'a> Scanner<'a> {
-    fn new(input: &'a String) -> Self {
-        let iter = input.chars().peekable();
-        Scanner {
-            iter,
-            has_error: false,
-        }
-    }
-
-    fn error(&mut self, line: u32, message: &str) {
-        self.report(line, "", message);
-    }
-
-    fn report(&mut self, line: u32, location: &str, message: &str) {
-        println!("[line {line}] Error {location} : {message}");
-        self.has_error = true;
-    }
-}
+use rust_lox::scanner::Scanner;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -72,7 +48,7 @@ fn run_prompt() {
 }
 
 fn run(input: &String) {
-    let _scanner = Scanner::new(&input);
+    let tokens = Scanner::scan(input);
     dbg!(input);
 }
 
