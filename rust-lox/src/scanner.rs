@@ -46,6 +46,102 @@ impl<'a> Scanner<'a> {
         }
     }
 
+    // If the next character in the input matches the specified character,
+    // consumte it and return true; othrwise return false.
+    fn match_char(&mut self, to_match: char) -> bool {
+        if let Some(next_char) = self.peek_char() {
+            if next_char == to_match {
+                self.read_char();
+                return true;
+            }
+        }
+
+        false
+    }
+
+    // Consume white space characters.
+    fn skip_white_space(&mut self) {
+        while let Some(c) = self.current_char {
+            if !c.is_whitespace() {
+                break;
+            }
+
+            self.read_char();
+        }
+    }
+
+    // Intended to process single line comments.
+    fn skip_rest_of_line(&mut self) {
+        while let Some(next_char) = self.peek_char() {
+            self.read_char();
+            if next_char == '\n' {
+                break;
+            }
+        }
+    }
+
+    fn next_token(&mut self) -> Option<Token> {
+        self.skip_white_space();
+
+        let token = match self.current_char {
+            // Some tokens correspond to a single character
+            Some('(') => Some(Token::LeftParen),
+            Some(')') => Some(Token::RightParen),
+            Some('{') => Some(Token::LeftBrace),
+            Some('}') => Some(Token::RightBrace),
+            Some(',') => Some(Token::Comma),
+            Some('.') => Some(Token::Dot),
+            Some('-') => Some(Token::Minus),
+            Some('+') => Some(Token::Plus),
+            Some(';') => Some(Token::Semicolon),
+            Some('*') => Some(Token::Star),
+
+            // Some characters can correspond to a single token, or be the initial character of a two character sequence
+            Some('!') => {
+                if self.match_char('=') {
+                    Some(Token::BangEqual)
+                } else {
+                    Some(Token::Bang)
+                }
+            }
+            Some('=') => {
+                if self.match_char('=') {
+                    Some(Token::EqualEqual)
+                } else {
+                    Some(Token::Equal)
+                }
+            }
+            Some('>') => {
+                if self.match_char('=') {
+                    Some(Token::GreaterEqual)
+                } else {
+                    Some(Token::Greater)
+                }
+            }
+            Some('<') => {
+                if self.match_char('=') {
+                    Some(Token::LessEqual)
+                } else {
+                    Some(Token::Less)
+                }
+            }
+
+            // Single line comments are proceeded by double slash
+            Some('/') => {
+                if self.match_char('/') {
+                    self.skip_rest_of_line();
+                    None
+                } else {
+                    Some(Token::Slash)
+                }
+            }
+
+            _ => None,
+        };
+
+        token
+    }
+
     // fn error(&mut self, line: u32, message: &str) {
     //     self.report(line, "", message);
     // }
