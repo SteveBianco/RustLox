@@ -25,12 +25,13 @@ fn run_file(file_path: &str) {
 
 fn run_prompt() {
     // Continually process input from command line until user terminates witth ctrl-z.
-    let mut input: String = String::new();
 
     loop {
         // Print user prompt
         print!(">>> ");
         io::stdout().flush().expect("Expected to flush line.");
+
+        let mut input: String = String::new();
 
         let nbytes = io::stdin()
             .read_line(&mut input)
