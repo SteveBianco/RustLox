@@ -48,8 +48,8 @@ fn run_prompt() {
 }
 
 fn run(input: &String) {
-    let tokens = Scanner::scan(input);
-    dbg!(input);
+    let _tokens = Scanner::scan(input);
+    dbg!(_tokens);
 }
 
 fn parse_file_path(args: &[String]) -> &str {

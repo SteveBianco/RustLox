@@ -11,8 +11,15 @@ pub struct Scanner<'a> {
 
 impl<'a> Scanner<'a> {
     pub fn scan(input: &'a String) -> Vec<Token> {
-        let scanner = Scanner::new(&input);
-        vec![]
+        let mut scanner = Scanner::new(&input);
+        let mut tokens = Vec::<Token>::new();
+
+        while let Some(token) = scanner.next_token() {
+            tokens.push(token);
+        }
+        tokens.push(Token::Eof);
+
+        tokens
     }
 
     fn new(input: &'a String) -> Self {
@@ -27,7 +34,7 @@ impl<'a> Scanner<'a> {
 
     // Consumes the next character in the input.
     // Updates current_position, next_position and current_char.
-    fn read_char(&mut self) {
+    fn read_char(&mut self) -> Option<char> {
         // Update current_char
         self.current_char = self.peek_char();
 
@@ -36,6 +43,8 @@ impl<'a> Scanner<'a> {
 
         // Update next_pos. Char type has 4 bytes. The utf-8 representation can be 1-4 bytes.
         self.next_pos = self.current_pos + self.current_char.map_or(0, |c| c.len_utf8());
+
+        self.current_char
     }
 
     fn peek_char(&mut self) -> Option<char> {
@@ -83,6 +92,10 @@ impl<'a> Scanner<'a> {
     fn next_token(&mut self) -> Option<Token> {
         self.skip_white_space();
 
+        if self.current_char.is_none() {
+            self.read_char();
+        }
+
         let token = match self.current_char {
             // Some tokens correspond to a single character
             Some('(') => Some(Token::LeftParen),
@@ -126,6 +139,8 @@ impl<'a> Scanner<'a> {
                 }
             }
 
+            Some('"') => self.read_string_literal(),
+
             // Single line comments are proceeded by double slash
             Some('/') => {
                 if self.match_char('/') {
@@ -142,6 +157,24 @@ impl<'a> Scanner<'a> {
         token
     }
 
+    // Assumes the opening quote has already been consumed.
+    fn read_string_literal(&mut self) -> Option<Token> {
+        let mut string: Vec<char> = Vec::new();
+
+        while let Some(character) = self.read_char() {
+            if character == '"' {
+                // this is the closing quote
+                let string: String = string.into_iter().collect();
+                return Some(Token::String(string));
+            }
+
+            string.push(character);
+        }
+
+        // TODO flag error - no terminating double quote
+        None
+    }
+
     // fn error(&mut self, line: u32, message: &str) {
     //     self.report(line, "", message);
     // }
@@ -152,6 +185,7 @@ impl<'a> Scanner<'a> {
     // }
 }
 
+#[derive(Debug)]
 pub enum Token {
     // Single-character tokens.
     LeftParen,
