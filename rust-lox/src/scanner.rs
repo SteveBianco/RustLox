@@ -1,12 +1,6 @@
-use std::iter::Peekable;
-use std::str::Chars;
-
 pub struct Scanner<'a> {
     input: &'a str,
     current_pos: usize,
-    next_pos: usize,
-    current_char: Option<char>,
-    has_error: bool,
 }
 
 impl<'a> Scanner<'a> {
@@ -26,32 +20,25 @@ impl<'a> Scanner<'a> {
         Scanner {
             input: input,
             current_pos: 0,
-            next_pos: 0,
-            current_char: None,
-            has_error: false,
         }
     }
 
     // Consumes the next character in the input.
     // Updates current_position, next_position and current_char.
     fn read_char(&mut self) -> Option<char> {
-        // Update current_char
-        self.current_char = self.peek_char();
+        let next_char = self.peek_char();
 
-        // Consume the character by updating current_pos.
-        self.current_pos = self.next_pos;
+        // Update current_pos. Char type has 4 bytes. The utf-8 representation can be 1-4 bytes.
+        self.current_pos = self.current_pos + next_char.map_or(0, |c| c.len_utf8());
 
-        // Update next_pos. Char type has 4 bytes. The utf-8 representation can be 1-4 bytes.
-        self.next_pos = self.current_pos + self.current_char.map_or(0, |c| c.len_utf8());
-
-        self.current_char
+        next_char
     }
 
     fn peek_char(&mut self) -> Option<char> {
-        if self.next_pos >= self.input.len() {
+        if self.current_pos >= self.input.len() {
             None
         } else {
-            self.input[self.next_pos..].chars().next()
+            self.input[self.current_pos..].chars().next()
         }
     }
 
@@ -70,11 +57,12 @@ impl<'a> Scanner<'a> {
 
     // Consume white space characters.
     fn skip_white_space(&mut self) {
-        while let Some(c) = self.current_char {
+        while let Some(c) = self.peek_char() {
             if !c.is_whitespace() {
                 break;
             }
 
+            // Consume the whitespace character
             self.read_char();
         }
     }
@@ -92,11 +80,7 @@ impl<'a> Scanner<'a> {
     fn next_token(&mut self) -> Option<Token> {
         self.skip_white_space();
 
-        if self.current_char.is_none() {
-            self.read_char();
-        }
-
-        let token = match self.current_char {
+        let token = match self.read_char() {
             // Some tokens correspond to a single character
             Some('(') => Some(Token::LeftParen),
             Some(')') => Some(Token::RightParen),
