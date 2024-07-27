@@ -1,6 +1,7 @@
 pub struct Scanner<'a> {
     input: &'a str,
     current_pos: usize,
+    last_read_char: Option<char>,
 }
 
 impl<'a> Scanner<'a> {
@@ -20,6 +21,7 @@ impl<'a> Scanner<'a> {
         Scanner {
             input: input,
             current_pos: 0,
+            last_read_char: None,
         }
     }
 
@@ -30,7 +32,7 @@ impl<'a> Scanner<'a> {
 
         // Update current_pos. Char type has 4 bytes. The utf-8 representation can be 1-4 bytes.
         self.current_pos = self.current_pos + next_char.map_or(0, |c| c.len_utf8());
-
+        self.last_read_char = next_char;
         next_char
     }
 
@@ -135,10 +137,53 @@ impl<'a> Scanner<'a> {
                 }
             }
 
+            Some(c) if c.is_digit(10) => self.read_number(),
+
             _ => None,
         };
 
         token
+    }
+
+    // Assumes first digit has already been read.
+    fn read_number(&mut self) -> Option<Token> {
+        let mut number: Vec<char> = Vec::new();
+
+        if let Some(first_digit) = self.last_read_char {
+            //TODO is this a digit?
+            number.push(first_digit);
+        } else {
+            //TODO signa. error
+        }
+
+        // TODO collapse this into a songle loop.
+        // Read the leading digits
+        while let Some(d) = self.peek_char() {
+            if !d.is_digit(10) {
+                break;
+            }
+
+            number.push(d);
+            self.read_char();
+        }
+
+        // Read optional decimal point
+        if let Some('.') = self.peek_char() {
+            number.push('.');
+            self.read_char();
+        }
+
+        // Read trailing digits
+        while let Some(d) = self.peek_char() {
+            if !d.is_digit(10) {
+                break;
+            }
+
+            number.push(d);
+            self.read_char();
+        }
+
+        Some(Token::Number(number.into_iter().collect()))
     }
 
     // Assumes the opening quote has already been consumed.
