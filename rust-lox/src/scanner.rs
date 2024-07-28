@@ -1,7 +1,10 @@
+use std::collections::HashMap;
+
 pub struct Scanner<'a> {
     input: &'a str,
     current_pos: usize,
     last_read_char: Option<char>,
+    keyword_to_token: HashMap<&'static str, Token>,
 }
 
 impl<'a> Scanner<'a> {
@@ -22,6 +25,7 @@ impl<'a> Scanner<'a> {
             input: input,
             current_pos: 0,
             last_read_char: None,
+            keyword_to_token: Self::create_keyword_map(),
         }
     }
 
@@ -139,6 +143,8 @@ impl<'a> Scanner<'a> {
 
             Some(c) if c.is_digit(10) => self.read_number(),
 
+            Some(c) if c.is_ascii_alphabetic() => self.read_identifier_or_keyword(),
+
             _ => None,
         };
 
@@ -204,6 +210,59 @@ impl<'a> Scanner<'a> {
         None
     }
 
+    fn read_identifier_or_keyword(&mut self) -> Option<Token> {
+        let mut string: Vec<char> = Vec::new();
+
+        if let Some(first_char) = self.last_read_char {
+            string.push(first_char);
+        } else {
+            //TODO report error
+            return None;
+        }
+
+        while let Some(next_char) = self.peek_char() {
+            if next_char.is_ascii_alphanumeric() {
+                self.read_char();
+                string.push(next_char);
+            } else {
+                break;
+            }
+        }
+
+        let string: String = string.iter().collect();
+
+        // Check if this identifier is a keyword.
+        if let Some(token) = self.keyword_to_token.get(string.as_str()) {
+            return Some(token.clone());
+        }
+
+        Some(Token::Identifier(string))
+    }
+
+    // Produces a map that associated string litrals representing keywords to the associated Token.
+    fn create_keyword_map() -> HashMap<&'static str, Token> {
+        let mut map = HashMap::new();
+
+        map.insert("&", Token::And);
+        map.insert("class", Token::Class);
+        map.insert("else", Token::Else);
+        map.insert("false", Token::False);
+        map.insert("fun", Token::Fun);
+        map.insert("for", Token::For);
+        map.insert("if", Token::If);
+        map.insert("nil", Token::Nil);
+        map.insert("or", Token::Or);
+        map.insert("print", Token::Print);
+        map.insert("return", Token::Return);
+        map.insert("super", Token::Super);
+        map.insert("this", Token::This);
+        map.insert("true", Token::True);
+        map.insert("var", Token::Var);
+        map.insert("while", Token::While);
+
+        map
+    }
+
     // fn error(&mut self, line: u32, message: &str) {
     //     self.report(line, "", message);
     // }
@@ -214,7 +273,7 @@ impl<'a> Scanner<'a> {
     // }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Token {
     // Single-character tokens.
     LeftParen,
