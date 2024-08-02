@@ -243,7 +243,7 @@ impl<'a> Scanner<'a> {
     fn create_keyword_map() -> HashMap<&'static str, Token> {
         let mut map = HashMap::new();
 
-        map.insert("&", Token::And);
+        map.insert("and", Token::And);
         map.insert("class", Token::Class);
         map.insert("else", Token::Else);
         map.insert("false", Token::False);
