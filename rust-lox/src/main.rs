@@ -4,6 +4,7 @@ use std::io;
 use std::io::Write;
 
 use rust_lox::scanner::Scanner;
+use rust_lox::token::Token;
 
 fn main() {
     let args: Vec<String> = env::args().collect();

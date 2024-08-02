@@ -1,10 +1,13 @@
+use crate::token::Token;
+use crate::token::TokenType;
 use std::collections::HashMap;
 
 pub struct Scanner<'a> {
     input: &'a str,
     current_pos: usize,
     last_read_char: Option<char>,
-    keyword_to_token: HashMap<&'static str, Token>,
+    keyword_to_token: HashMap<&'static str, TokenType>,
+    line: u32,
 }
 
 impl<'a> Scanner<'a> {
@@ -15,7 +18,8 @@ impl<'a> Scanner<'a> {
         while let Some(token) = scanner.next_token() {
             tokens.push(token);
         }
-        tokens.push(Token::Eof);
+
+        tokens.push(Token::create(TokenType::Eof, scanner.line));
 
         tokens
     }
@@ -26,6 +30,7 @@ impl<'a> Scanner<'a> {
             current_pos: 0,
             last_read_char: None,
             keyword_to_token: Self::create_keyword_map(),
+            line: 0,
         }
     }
 
@@ -37,6 +42,10 @@ impl<'a> Scanner<'a> {
         // Update current_pos. Char type has 4 bytes. The utf-8 representation can be 1-4 bytes.
         self.current_pos = self.current_pos + next_char.map_or(0, |c| c.len_utf8());
         self.last_read_char = next_char;
+
+        if next_char == Some('\n') {
+            self.line = self.line + 1;
+        }
         next_char
     }
 
@@ -83,49 +92,61 @@ impl<'a> Scanner<'a> {
         }
     }
 
+    fn create_token(&self, token_type: TokenType) -> Option<Token> {
+        Some(Token::create(token_type, self.line))
+    }
+
+    fn create_token_with_string(&self, token_type: TokenType, string: String) -> Option<Token> {
+        Some(Token::create_with_string(token_type, self.line, string))
+    }
+
+    fn create_token_with_number(&self, token_type: TokenType, number: f64) -> Option<Token> {
+        Some(Token::create_with_number(token_type, self.line, number))
+    }
+
     fn next_token(&mut self) -> Option<Token> {
         self.skip_white_space();
 
         let token = match self.read_char() {
             // Some tokens correspond to a single character
-            Some('(') => Some(Token::LeftParen),
-            Some(')') => Some(Token::RightParen),
-            Some('{') => Some(Token::LeftBrace),
-            Some('}') => Some(Token::RightBrace),
-            Some(',') => Some(Token::Comma),
-            Some('.') => Some(Token::Dot),
-            Some('-') => Some(Token::Minus),
-            Some('+') => Some(Token::Plus),
-            Some(';') => Some(Token::Semicolon),
-            Some('*') => Some(Token::Star),
+            Some('(') => self.create_token(TokenType::LeftParen),
+            Some(')') => self.create_token(TokenType::RightParen),
+            Some('{') => self.create_token(TokenType::LeftBrace),
+            Some('}') => self.create_token(TokenType::RightBrace),
+            Some(',') => self.create_token(TokenType::Comma),
+            Some('.') => self.create_token(TokenType::Dot),
+            Some('-') => self.create_token(TokenType::Minus),
+            Some('+') => self.create_token(TokenType::Plus),
+            Some(';') => self.create_token(TokenType::Semicolon),
+            Some('*') => self.create_token(TokenType::Star),
 
             // Some characters can correspond to a single token, or be the initial character of a two character sequence
             Some('!') => {
                 if self.match_char('=') {
-                    Some(Token::BangEqual)
+                    self.create_token(TokenType::BangEqual)
                 } else {
-                    Some(Token::Bang)
+                    self.create_token(TokenType::Bang)
                 }
             }
             Some('=') => {
                 if self.match_char('=') {
-                    Some(Token::EqualEqual)
+                    self.create_token(TokenType::EqualEqual)
                 } else {
-                    Some(Token::Equal)
+                    self.create_token(TokenType::Equal)
                 }
             }
             Some('>') => {
                 if self.match_char('=') {
-                    Some(Token::GreaterEqual)
+                    self.create_token(TokenType::GreaterEqual)
                 } else {
-                    Some(Token::Greater)
+                    self.create_token(TokenType::Greater)
                 }
             }
             Some('<') => {
                 if self.match_char('=') {
-                    Some(Token::LessEqual)
+                    self.create_token(TokenType::LessEqual)
                 } else {
-                    Some(Token::Less)
+                    self.create_token(TokenType::Less)
                 }
             }
 
@@ -137,7 +158,7 @@ impl<'a> Scanner<'a> {
                     self.skip_rest_of_line();
                     None
                 } else {
-                    Some(Token::Slash)
+                    self.create_token(TokenType::Slash)
                 }
             }
 
@@ -189,7 +210,16 @@ impl<'a> Scanner<'a> {
             self.read_char();
         }
 
-        Some(Token::Number(number.into_iter().collect()))
+        // Convert chars to an f64
+        let number: String = number.into_iter().collect();
+        let number = number.parse::<f64>();
+
+        if let Ok(number) = number {
+            return self.create_token_with_number(TokenType::Number, number);
+        }
+
+        //TODO report error
+        None
     }
 
     // Assumes the opening quote has already been consumed.
@@ -200,7 +230,7 @@ impl<'a> Scanner<'a> {
             if character == '"' {
                 // this is the closing quote
                 let string: String = string.into_iter().collect();
-                return Some(Token::String(string));
+                return self.create_token_with_string(TokenType::String, string);
             }
 
             string.push(character);
@@ -232,33 +262,33 @@ impl<'a> Scanner<'a> {
         let string: String = string.iter().collect();
 
         // Check if this identifier is a keyword.
-        if let Some(token) = self.keyword_to_token.get(string.as_str()) {
-            return Some(token.clone());
+        if let Some(tokenType) = self.keyword_to_token.get(string.as_str()) {
+            return self.create_token_with_string(tokenType.clone(), string);
         }
 
-        Some(Token::Identifier(string))
+        self.create_token_with_string(TokenType::Identifier, string)
     }
 
     // Produces a map that associated string litrals representing keywords to the associated Token.
-    fn create_keyword_map() -> HashMap<&'static str, Token> {
+    fn create_keyword_map() -> HashMap<&'static str, TokenType> {
         let mut map = HashMap::new();
 
-        map.insert("and", Token::And);
-        map.insert("class", Token::Class);
-        map.insert("else", Token::Else);
-        map.insert("false", Token::False);
-        map.insert("fun", Token::Fun);
-        map.insert("for", Token::For);
-        map.insert("if", Token::If);
-        map.insert("nil", Token::Nil);
-        map.insert("or", Token::Or);
-        map.insert("print", Token::Print);
-        map.insert("return", Token::Return);
-        map.insert("super", Token::Super);
-        map.insert("this", Token::This);
-        map.insert("true", Token::True);
-        map.insert("var", Token::Var);
-        map.insert("while", Token::While);
+        map.insert("and", TokenType::And);
+        map.insert("class", TokenType::Class);
+        map.insert("else", TokenType::Else);
+        map.insert("false", TokenType::False);
+        map.insert("fun", TokenType::Fun);
+        map.insert("for", TokenType::For);
+        map.insert("if", TokenType::If);
+        map.insert("nil", TokenType::Nil);
+        map.insert("or", TokenType::Or);
+        map.insert("print", TokenType::Print);
+        map.insert("return", TokenType::Return);
+        map.insert("super", TokenType::Super);
+        map.insert("this", TokenType::This);
+        map.insert("true", TokenType::True);
+        map.insert("var", TokenType::Var);
+        map.insert("while", TokenType::While);
 
         map
     }
@@ -271,55 +301,4 @@ impl<'a> Scanner<'a> {
     //     println!("[line {line}] Error {location} : {message}");
     //     self.haserror = true;
     // }
-}
-
-#[derive(Debug, Clone)]
-pub enum Token {
-    // Single-character tokens.
-    LeftParen,
-    RightParen,
-    LeftBrace,
-    RightBrace,
-    Comma,
-    Dot,
-    Minus,
-    Plus,
-    Semicolon,
-    Slash,
-    Star,
-
-    // One or two character tokens.
-    Bang,
-    BangEqual,
-    Equal,
-    EqualEqual,
-    Greater,
-    GreaterEqual,
-    Less,
-    LessEqual,
-
-    // Literals.
-    Identifier(String),
-    String(String),
-    Number(String),
-
-    // Keywords.
-    And,
-    Class,
-    Else,
-    False,
-    Fun,
-    For,
-    If,
-    Nil,
-    Or,
-    Print,
-    Return,
-    Super,
-    This,
-    True,
-    Var,
-    While,
-
-    Eof,
 }
