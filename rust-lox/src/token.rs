@@ -5,6 +5,12 @@ pub struct Token {
     pub line: u32,
 }
 
+#[derive(Debug, Clone)]
+pub enum TokenValue {
+    String(String),
+    Number(f64),
+}
+
 impl Token {
     pub fn create(token_type: TokenType, line: u32) -> Self {
         Token {
@@ -29,12 +35,6 @@ impl Token {
             line,
         }
     }
-}
-
-#[derive(Debug, Clone)]
-pub enum TokenValue {
-    String(String),
-    Number(f64),
 }
 
 #[derive(Debug, Clone)]

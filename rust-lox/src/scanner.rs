@@ -262,8 +262,8 @@ impl<'a> Scanner<'a> {
         let string: String = string.iter().collect();
 
         // Check if this identifier is a keyword.
-        if let Some(tokenType) = self.keyword_to_token.get(string.as_str()) {
-            return self.create_token_with_string(tokenType.clone(), string);
+        if let Some(token_type) = self.keyword_to_token.get(string.as_str()) {
+            return self.create_token_with_string(token_type.clone(), string);
         }
 
         self.create_token_with_string(TokenType::Identifier, string)
